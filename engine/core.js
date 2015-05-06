@@ -1,7 +1,9 @@
 define(function core(require){
     return {
         container: require('./core/container'),
-        entity: require('./core/entity'),
-        director: require('./core/director')
+        Entity: require('./core/Entity'),
+        director: require('./core/director'),
+        Scene: require('./core/Scene'),
+        Aspect: require('./core/Aspect')
     }
 });
