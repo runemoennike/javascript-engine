@@ -9,10 +9,16 @@ require([
 
 function main(require) {
     var core = require('engine/core');
-    var MenuScene = require('game/scenes/menuScene');
-    var GameScene = require('game/scenes/gameScene');
+    var graphics = require('engine/graphics');
 
     core.container.createCanvas();
-    //core.director.setScene(new MenuScene());
-    core.director.setScene(new GameScene());
+
+    var playerSprite = new graphics.Sprite('game/textures/p1_spritesheet.png');
+
+    core.control.run(gameLoop);
+
+    function gameLoop(speed) {
+
+    }
+
 }
