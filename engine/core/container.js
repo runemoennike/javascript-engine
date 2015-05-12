@@ -23,7 +23,7 @@ define(function container(require) {
             _renderContext.cullFace(_renderContext.BACK);
         } catch (e) {
         }
-        if (!gl) {
+        if (!_renderContext) {
             logging.error("Could not initialise WebGL render context.");
         }
     }

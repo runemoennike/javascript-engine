@@ -3,8 +3,6 @@ require([
 
     'engine/core',
     'engine/graphics',
-
-    'game/scenes/menuScene'
 ], main);
 
 function main(require) {
@@ -18,7 +16,7 @@ function main(require) {
     core.control.run(gameLoop);
 
     function gameLoop(speed) {
-
+        graphics.renderer.render(playerSprite);
     }
 
 }

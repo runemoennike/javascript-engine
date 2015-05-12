@@ -6,6 +6,5 @@ define(function () {
 
     }
 
-
-    return SpriteEntity;
+    return Sprite;
 });

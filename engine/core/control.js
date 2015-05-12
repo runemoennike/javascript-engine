@@ -16,7 +16,6 @@ define(function control(require) {
 
     function activate() {
         setupRequestAnimationFrameFn();
-        setupTimestampFn();
     }
 
     ///////////////////////////////////////////////////////////
@@ -42,18 +41,14 @@ define(function control(require) {
     }
 
     function timestamp() {
-        return timestampFn();
+        if(window.performance && window.performance.now) {
+            return window.performance.now();
+        } else {
+            return Date.now();
+        }
     }
 
     ///////////////////////////////////////////////////////////
-
-    function setupTimestampFn() {
-        if(window.performance && window.performance.now) {
-            timestampFn = window.performance.now;
-        } else {
-            timestampFn = Date.now();
-        }
-    }
 
     function setupRequestAnimationFrameFn() {
         // Adapted from https://gist.github.com/paulirish/1579671
