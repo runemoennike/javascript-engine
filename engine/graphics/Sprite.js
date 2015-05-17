@@ -1,8 +1,14 @@
-define(function () {
+define( function (require) {
+    var materials = require('./materials');
+
     /**
      * @constructor
      */
-    function Sprite() {
+    function Sprite(material) {
+        materials.loadMaterial(material);
+    }
+
+    Sprite.prototype.getRenderInfo = function() {
 
     }
 

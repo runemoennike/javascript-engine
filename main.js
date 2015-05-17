@@ -1,3 +1,9 @@
+require.config({
+    paths: {
+        "text": 'lib/require/text'
+    }
+});
+
 require([
     'require',
 
@@ -11,7 +17,9 @@ function main(require) {
 
     core.container.createCanvas();
 
-    var playerSprite = new graphics.Sprite('game/textures/p1_spritesheet.png');
+    var playerSprite = new graphics.Sprite('game/materials/matPlayer');
+    playerSprite.x = 0;
+    playerSprite.y = 0;
 
     core.control.run(gameLoop);
 
