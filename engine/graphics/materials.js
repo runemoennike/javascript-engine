@@ -7,8 +7,34 @@ define(function materials(require) {
 
     return {
         loadMaterial: loadMaterial,
-        activateMaterial: activateMaterial
+        activateMaterial: activateMaterial,
+        getShaderProgram: getShaderProgram,
+        getMaterialDefinition: getMaterialDefinition,
     };
+
+    function getMaterialDefinition(material) {
+        if (!_(_materials).has(material)) {
+            logging.error("Material not loaded: " + material);
+            return;
+        }
+
+        return _materials[material];
+    }
+
+    function getShaderProgram(material) {
+        var materialDefinition = getMaterialDefinition(material);
+
+        if(!materialDefinition) {
+            return;
+        }
+
+        if (!_(_shaderPrograms).has(materialDefinition.shader)) {
+            logging.error("Cannot activate material, shader not loaded: " + materialDefinition.shader);
+            return;
+        }
+
+        return _shaderPrograms[materialDefinition.shader];
+    }
 
     function loadMaterial(material) {
         require([material], function (materialDefinition) {
@@ -16,6 +42,8 @@ define(function materials(require) {
                 logging.error("No shader given in material definition. Cannot load material.");
                 return;
             }
+
+            _materials[material] = materialDefinition;
 
             require([materialDefinition.shader + '/shader.js'], function (shaderDefinition) {
                 loadShaderProgram(materialDefinition.shader, shaderDefinition)
@@ -79,13 +107,10 @@ define(function materials(require) {
         }
     }
 
-    function activateMaterial(materialDefinition) {
-        if (!_(_shaderPrograms).has(materialDefinition.shader)) {
-            logging.error("Cannot activate material, shader not loaded: " + materialDefinition.shader);
-            return;
-        }
+    function activateMaterial(material) {
+        var shaderProgram = getShaderProgram(material);
 
         var gl = core.container.getRenderContext();
-        gl.useProgram(_shaderPrograms[materialDefinition.shader]);
+        gl.useProgram(shaderProgram);
     }
 });
