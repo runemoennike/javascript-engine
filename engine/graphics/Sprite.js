@@ -1,5 +1,9 @@
-define( function (require) {
+define(function (require) {
     var materials = require('./materials');
+    var q = require('q');
+
+    var readyDeferred = q.defer();
+    Sprite.prototype.readyPromise = readyDeferred.promise;
 
     Sprite.prototype.material = null;
     Sprite.prototype.x = 0;
@@ -10,10 +14,16 @@ define( function (require) {
      */
     function Sprite(material) {
         this.material = material;
-        materials.loadMaterial(material);
+
+        var materialPromise = materials.loadMaterial(material);
+
+        q.all([materialPromise])
+            .done(function () {
+                readyDeferred.resolve();
+            })
     }
 
-    Sprite.prototype.getRenderInfo = function() {
+    Sprite.prototype.getRenderInfo = function () {
         return {
             material: this.material,
             x: this.x,

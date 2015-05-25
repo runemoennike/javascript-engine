@@ -1,6 +1,7 @@
 require.config({
     paths: {
-        "text": 'lib/require/text'
+        text: 'lib/require/text',
+        q: 'lib/q/q'
     }
 });
 
@@ -9,22 +10,17 @@ require([
 
     'engine/core',
     'engine/graphics',
+
+    'game/game',
 ], main);
 
 function main(require) {
     var core = require('engine/core');
-    var graphics = require('engine/graphics');
+    var game = require('game/game');
 
-    core.container.createCanvas();
-
-    var playerSprite = new graphics.Sprite('game/materials/matPlayer');
-    playerSprite.x = 0;
-    playerSprite.y = 0;
-
-    core.control.run(gameLoop);
-
-    function gameLoop(speed) {
-        graphics.renderer.render(playerSprite);
-    }
+    core
+        .container
+        .createCanvas()
+            .done(game.start);
 
 }

@@ -1,6 +1,7 @@
 define(function materials(require) {
     var logging = require('../debug/logging');
     var core = require('engine/core');
+    var q = require('q');
 
     var _shaderPrograms = {};
     var _materials = {};
@@ -24,7 +25,7 @@ define(function materials(require) {
     function getShaderProgram(material) {
         var materialDefinition = getMaterialDefinition(material);
 
-        if(!materialDefinition) {
+        if (!materialDefinition) {
             return;
         }
 
@@ -37,57 +38,70 @@ define(function materials(require) {
     }
 
     function loadMaterial(material) {
+        var dfd = q.defer();
+
         require([material], function (materialDefinition) {
             if (!_(materialDefinition).has('shader')) {
                 logging.error("No shader given in material definition. Cannot load material.");
+                dfd.reject();
                 return;
             }
 
             _materials[material] = materialDefinition;
 
             require([materialDefinition.shader + '/shader.js'], function (shaderDefinition) {
-                loadShaderProgram(materialDefinition.shader, shaderDefinition)
+                dfd.resolve(
+                    loadShaderProgram(materialDefinition.shader, shaderDefinition)
+                );
             });
         });
+
+        return dfd.promise;
     }
 
     function loadShaderProgram(name, shaderDefinition) {
+        var dfd = q.defer();
+
         if (_(_shaderPrograms).contains(name)) {
-            return;
+            dfd.resolve;
+        } else if (!_(shaderDefinition).has('fragment')) {
+            var errorMsg = "No fragment shader given in shader definition.";
+            logging.error(errorMsg);
+            dfd.reject(errorMsg)
+        } else if (!_(shaderDefinition).has('vertex')) {
+            var errorMsg = "No vertex shader given in shader definition.";
+            logging.error(errorMsg);
+            dfd.reject(errorMsg);
+        } else {
+
+            require([
+                'text!' + shaderDefinition.fragment,
+                'text!' + shaderDefinition.vertex,
+            ], function (fragmentCode, vertexCode) {
+                var gl = core.container.getRenderContext();
+
+                var fragmentCompiled = compileShader(shaderDefinition.fragment, fragmentCode, gl.FRAGMENT_SHADER);
+                var vertexCompiled = compileShader(shaderDefinition.vertex, vertexCode, gl.VERTEX_SHADER);
+
+                var shaderProgram = gl.createProgram();
+                gl.attachShader(shaderProgram, fragmentCompiled);
+                gl.attachShader(shaderProgram, vertexCompiled);
+
+                gl.linkProgram(shaderProgram);
+
+                if (gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                    gl.useProgram(shaderProgram);
+                    _shaderPrograms[name] = shaderProgram;
+                    dfd.resolve();
+                } else {
+                    var errorMsg = 'Failed to link shader program ' + name + ": " + gl.getShaderInfoLog(shader);
+                    logging.error(errorMsg);
+                    dfd.reject(errorMsg);
+                }
+            });
         }
 
-        if (!_(shaderDefinition).has('fragment')) {
-            logging.error("No fragment shader given in shader definition.");
-            return;
-        }
-
-        if (!_(shaderDefinition).has('vertex')) {
-            logging.error("No vertex shader given in shader definition.");
-            return;
-        }
-
-        require([
-            'text!' + shaderDefinition.fragment,
-            'text!' + shaderDefinition.vertex,
-        ], function (fragmentCode, vertexCode) {
-            var gl = core.container.getRenderContext();
-
-            var fragmentCompiled = compileShader(shaderDefinition.fragment, fragmentCode, gl.FRAGMENT_SHADER);
-            var vertexCompiled = compileShader(shaderDefinition.vertex, vertexCode, gl.VERTEX_SHADER);
-
-            var shaderProgram = gl.createProgram();
-            gl.attachShader(shaderProgram, fragmentCompiled);
-            gl.attachShader(shaderProgram, vertexCompiled);
-
-            gl.linkProgram(shaderProgram);
-
-            if (gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-                gl.useProgram(shaderProgram);
-                _shaderPrograms[name] = shaderProgram;
-            } else {
-                logging.error('Failed to link shader program ' + name + ": " + gl.getShaderInfoLog(shader))
-            }
-        })
+        return dfd.promise;
     }
 
     function compileShader(shaderName, shaderCode, shaderType) {

@@ -1,8 +1,10 @@
 define(function container(require) {
     var logging = require('../debug/logging');
+    var q = require('q');
 
     return {
         createCanvas: createCanvas,
+        attachCanvas: attachCanvas,
         setCanvas: setCanvas,
         getCanvas: getCanvas,
         getRenderContext: getRenderContext
@@ -14,21 +16,20 @@ define(function container(require) {
     //region Canvas
 
     function createRenderContext(canvasElement) {
-        try {
-            _renderContext = canvasElement.getContext("experimental-webgl");
-            _renderContext.viewportWidth = canvasElement.width;
-            _renderContext.viewportHeight = canvasElement.height;
 
-            _renderContext.enable(_renderContext.CULL_FACE);
-            _renderContext.cullFace(_renderContext.BACK);
-        } catch (e) {
-        }
+        _renderContext = canvasElement.getContext("experimental-webgl");
+        _renderContext.viewportWidth = canvasElement.width;
+        _renderContext.viewportHeight = canvasElement.height;
+
+        _renderContext.enable(_renderContext.CULL_FACE);
+        _renderContext.cullFace(_renderContext.BACK);
+
         if (!_renderContext) {
             logging.error("Could not initialise WebGL render context.");
         }
     }
 
-    function getRenderContext () {
+    function getRenderContext() {
         return _renderContext;
     }
 
@@ -42,6 +43,32 @@ define(function container(require) {
     }
 
     function createCanvas() {
+        var canvasElement = createCanvasElement();
+
+        var promise =
+            attachCanvas(canvasElement)
+                .then(function () {
+                    setCanvas(canvasElement);
+                });
+
+        return promise;
+    }
+
+    function createCanvasElement() {
+        var canvasElement = document.createElement('canvas');
+
+        canvasElement.id = 'game-canvas';
+        canvasElement.style.width = '100%';
+        canvasElement.style.height = '100%';
+        canvasElement.style.position = 'absolute';
+        canvasElement.style.border = '0';
+        canvasElement.style.top = 0;
+        canvasElement.style.left = 0;
+
+        return canvasElement;
+    }
+
+    function attachCanvas(canvasElement) {
         var bodyElements = document.getElementsByTagName('body');
 
         if (bodyElements.length != 1) {
@@ -50,25 +77,17 @@ define(function container(require) {
         }
 
         var bodyElement = bodyElements[0];
-        var canvasElement = createCanvasElement();
-
         bodyElement.appendChild(canvasElement);
 
-        setCanvas(canvasElement);
-    }
-
-    function createCanvasElement() {
-        var element = document.createElement('canvas');
-
-        element.id = 'game-canvas';
-        element.style.width = '100%';
-        element.style.height = '100%';
-        element.style.position = 'absolute';
-        element.style.border = '0';
-        element.style.top = 0;
-        element.style.left = 0;
-
-        return element;
+        return q
+            // Wait for element to be attached and properties to have settled
+            .delay(100)
+            // Set backing store resolution to the same as the displayed size
+            .then(function () {
+                canvasElement.width = canvasElement.offsetWidth;
+                canvasElement.height = canvasElement.offsetHeight;
+            })
+            .thenResolve(canvasElement);
     }
 
     //endregion
